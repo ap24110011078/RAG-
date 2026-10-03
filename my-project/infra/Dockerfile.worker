@@ -1,0 +1,18 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY backend/pyproject.toml backend/README.md ./backend/
+COPY backend/app ./backend/app
+COPY backend/app.py ./backend/
+COPY worker/ ./worker/
+
+RUN pip install --no-cache-dir -e ./backend
+
+ENV PYTHONPATH=/app/backend:/app/worker
+
+CMD ["celery", "-A", "worker.celery_worker:celery_app", "worker", "--loglevel=info"]
